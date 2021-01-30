@@ -1,0 +1,14 @@
+{
+  "id": "{8EF72688-3911-F56D-3967-71301E1A9FC2}",
+  "name": "Wassermelder",
+  "type": 3,
+  "vendor": "Ulrich Bittner",
+  "aliases": [
+    "Wassermelder"
+  ],
+  "url": "https://github.com/ubittner/Wassermelder",
+  "parentRequirements": [],
+  "childRequirements": [],
+  "implemented": [],
+  "prefix": "WM"
+}

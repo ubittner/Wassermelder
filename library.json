@@ -1,0 +1,12 @@
+{
+    "id": "{BC0AD02B-B774-7224-F3B7-994C42B7CD4E}",
+    "author": "Ulrich Bittner",
+    "name": "Wassermelder",
+    "url": "https://github.com/ubittner/Wassermelder",
+    "compatibility": {
+        "version": "5.5"
+    },
+    "version": "1.00",
+    "build": 1,
+    "date": 1612009898
+}
