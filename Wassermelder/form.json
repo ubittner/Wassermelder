@@ -15,13 +15,18 @@
         },
         {
           "type": "CheckBox",
+          "name": "EnableWaterDetection",
+          "caption": "Wassermelder (Aus/An)"
+        },
+        {
+          "type": "CheckBox",
           "name": "EnableLocationDesignation",
           "caption": "Standort"
         },
         {
           "type": "CheckBox",
           "name": "EnableSensorList",
-          "caption": "Wassermelder"
+          "caption": "Wassermelder (Liste)"
         },
         {
           "type": "CheckBox",
@@ -53,7 +58,7 @@
       "items": [
         {
           "type": "List",
-          "name": "WaterSensors",
+          "name": "WaterDetectors",
           "rowCount": 10,
           "add": true,
           "delete": true,
@@ -87,7 +92,7 @@
               "name": "ID",
               "width": "auto",
               "add": 0,
-              "onClick": "WM_EnableTriggerVariableConfigurationButton($id, $WaterSensors['ID']);",
+              "onClick": "WM_EnableTriggerVariableConfigurationButton($id, $WaterDetectors['ID']);",
               "edit": {
                 "type": "SelectVariable"
               }
@@ -288,6 +293,26 @@
           "type": "Button",
           "caption": "Tagesbericht versenden",
           "onClick": "WM_SendDailyNotification($id); echo 'Die Benachrichtigungen wurden versendet!';"
+        }
+      ]
+    },
+    {
+      "type": "ExpansionPanel",
+      "caption": "Wassermelder",
+      "items": [
+        {
+          "type": "PopupButton",
+          "caption": "Automatisch ermitteln",
+          "popup": {
+            "caption": "Wassermelder wirklich automatisch ermitteln?",
+            "items": [
+              {
+                "type": "Button",
+                "caption": "Homematic IP",
+                "onClick": "WM_DetermineWaterDetectors($id);"
+              }
+            ]
+          }
         }
       ]
     }

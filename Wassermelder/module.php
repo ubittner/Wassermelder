@@ -19,7 +19,7 @@ class Wassermelder extends IPSModule
     //Helper
     use WM_backupRestore;
     use WM_notification;
-    use WM_waterSensor;
+    use WM_waterDetector;
 
     // Constants
     private const WEBFRONT_MODULE_GUID = '{3565B1F2-8F7B-4311-A4B6-1BF1D868F39E}';
@@ -27,6 +27,7 @@ class Wassermelder extends IPSModule
     private const NEXXTMOBILE_SMS_MODULE_GUID = '{7E6DBE40-4438-ABB7-7EE0-93BC4F1AF0CE}';
     private const SIPGATE_SMS_MODULE_GUID = '{965ABB3F-B4EE-7F9F-1E5E-ED386219EF7C}';
     private const TELEGRAM_BOT_MODULE_GUID = '{32464EBD-4CCC-6174-4031-5AA374F7CD8D}';
+    private const HOMEMATIC_DEVICE_GUID = '{EE4A81C6-5C90-4DB7-AD2F-F6BBD521412E}';
 
     public function Create()
     {
@@ -36,6 +37,7 @@ class Wassermelder extends IPSModule
         // Properties
         // Functions
         $this->RegisterPropertyBoolean('MaintenanceMode', false);
+        $this->RegisterPropertyBoolean('EnableWaterDetection', true);
         $this->RegisterPropertyBoolean('EnableLocationDesignation', true);
         $this->RegisterPropertyBoolean('EnableSensorList', true);
         $this->RegisterPropertyBoolean('EnableState', true);
@@ -43,7 +45,7 @@ class Wassermelder extends IPSModule
         // Description
         $this->RegisterPropertyString('LocationDesignation', '');
         // Water sensors
-        $this->RegisterPropertyString('WaterSensors', '[]');
+        $this->RegisterPropertyString('WaterDetectors', '[]');
         // Notification
         $this->RegisterPropertyBoolean('UseNotification', true);
         $this->RegisterPropertyBoolean('UseStateWaterDetected', true);
@@ -65,15 +67,22 @@ class Wassermelder extends IPSModule
         $this->RegisterPropertyInteger('Telegram', 0);
 
         // Variables
+        // Water detection
+        $id = @$this->GetIDForIdent('WaterDetection');
+        $this->RegisterVariableBoolean('WaterDetection', 'Wassermelder', '~Switch', 10);
+        $this->EnableAction('WaterDetection');
+        if ($id == false) {
+            $this->SetValue('WaterDetection', true);
+        }
         // Location
         $id = @$this->GetIDForIdent('Location');
-        $this->RegisterVariableString('Location', 'Standort', '', 10);
+        $this->RegisterVariableString('Location', 'Standort', '', 20);
         if ($id == false) {
             IPS_SetIcon($this->GetIDForIdent('Location'), 'IPS');
         }
         // Sensor list
         $id = @$this->GetIDForIdent('SensorList');
-        $this->RegisterVariableString('SensorList', 'Wassermelder', 'HTMLBox', 20);
+        $this->RegisterVariableString('SensorList', 'Wassermelder', 'HTMLBox', 30);
         if ($id == false) {
             IPS_SetIcon($this->GetIDForIdent('SensorList'), 'Drops');
         }
@@ -85,10 +94,10 @@ class Wassermelder extends IPSModule
         IPS_SetVariableProfileIcon($profile, '');
         IPS_SetVariableProfileAssociation($profile, 0, 'OK', 'Ok', 0x00FF00);
         IPS_SetVariableProfileAssociation($profile, 1, 'Wasser erkannt', 'Warning', 0xFF0000);
-        $this->RegisterVariableBoolean('State', 'Status', $profile, 30);
+        $this->RegisterVariableBoolean('State', 'Status', $profile, 40);
         // Alerting sensor
         $id = @$this->GetIDForIdent('AlertingSensor');
-        $this->RegisterVariableString('AlertingSensor', 'Auslösender Melder', '', 40);
+        $this->RegisterVariableString('AlertingSensor', 'Auslösender Melder', '', 50);
         $this->SetValue('AlertingSensor', '');
         if ($id == false) {
             IPS_SetIcon($this->GetIDForIdent('AlertingSensor'), 'Warning');
@@ -112,6 +121,7 @@ class Wassermelder extends IPSModule
         }
 
         // Options
+        IPS_SetHidden($this->GetIDForIdent('WaterDetection'), !$this->ReadPropertyBoolean('EnableWaterDetection'));
         IPS_SetHidden($this->GetIDForIdent('Location'), !$this->ReadPropertyBoolean('EnableLocationDesignation'));
         IPS_SetHidden($this->GetIDForIdent('SensorList'), !$this->ReadPropertyBoolean('EnableSensorList'));
         IPS_SetHidden($this->GetIDForIdent('State'), !$this->ReadPropertyBoolean('EnableState'));
@@ -139,7 +149,7 @@ class Wassermelder extends IPSModule
         }
 
         // Register references and update messages
-        $variables = json_decode($this->ReadPropertyString('WaterSensors'));
+        $variables = json_decode($this->ReadPropertyString('WaterDetectors'));
         foreach ($variables as $variable) {
             if ($variable->Use) {
                 if ($variable->ID != 0 && @IPS_ObjectExists($variable->ID)) {
@@ -202,6 +212,9 @@ class Wassermelder extends IPSModule
                 if ($this->CheckMaintenanceMode()) {
                     return;
                 }
+                if (!$this->GetValue('WaterDetection')) {
+                    return;
+                }
 
                 // Check trigger variable
                 $valueChanged = 'false';
@@ -219,7 +232,7 @@ class Wassermelder extends IPSModule
     {
         $formData = json_decode(file_get_contents(__DIR__ . '/form.json'), true);
         // Water sensors
-        $waterSensors = json_decode($this->ReadPropertyString('WaterSensors'));
+        $waterSensors = json_decode($this->ReadPropertyString('WaterDetectors'));
         if (!empty($waterSensors)) {
             foreach ($waterSensors as $waterSensor) {
                 $id = $waterSensor->ID;
@@ -589,6 +602,24 @@ class Wassermelder extends IPSModule
                 echo "\nVariablenprofil:\n";
                 print_r($profile);
             }
+        }
+    }
+
+    #################### Request Action
+
+    public function RequestAction($Ident, $Value)
+    {
+        switch ($Ident) {
+            case 'WaterDetection':
+                $this->SetValue($Ident, $Value);
+                if ($Value) {
+                    $sensors = json_decode($this->ReadPropertyString('WaterDetectors'));
+                    foreach ($sensors as $sensor) {
+                        $this->CheckTriggerVariable($sensor->ID, true);
+                    }
+                }
+                break;
+
         }
     }
 
